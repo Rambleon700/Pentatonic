@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuitarJamz 5 Pentatonic Boxes - 24 Fretboard Master</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b1120',
+                        cardBg: '#1e293b',
+                        accent: '#10b981',
+                        rootNote: '#059669', // Emerald green matching GuitarJamz root highlight
+                        scaleNote: '#3b82f6',
+                        blueNote: '#a855f7',
+                        overlayNote: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fretboard-scroll::-webkit-scrollbar {
+            height: 10px;
+        }
+        .fretboard-scroll::-webkit-scrollbar-track {
+            background: #0b1120;
+            border-radius: 5px;
+        }
+        .fretboard-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 5px;
+        }
+        .fretboard-scroll::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        
+        .fretboard-wood {
+            background: linear-gradient(180deg, #181512 0%, #241e1b 50%, #181512 100%);
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.9);
+        }
+        
+        @keyframes notePulse {
+            0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { transform: translate(-50%, -50%) scale(1.3); box-shadow: 0 0 14px 6px rgba(16, 185, 129, 0.9); }
+            100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .playing-note {
+            animation: notePulse 0.4s ease-out infinite;
+            z-index: 50 !important;
+        }
+
+        .box-highlight-overlay {
+            background: rgba(16, 185, 129, 0.08);
+            border-left: 2px dashed rgba(16, 185, 129, 0.6);
+            border-right: 2px dashed rgba(16, 185, 129, 0.6);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen font-sans antialiased flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-emerald-500 to-teal-700 p-2.5 rounded-xl shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-guitar text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">
+                        The 5 Pentatonic Boxes Visualizer
+                    </h1>
+                    <p class="text-xs text-slate-400">GuitarJamz System Transposition & Interactive 24-Fret Trainer</p>
+                </div>
+            </div>
+
+            <!-- Quick Controls Bar -->
+            <div class="flex flex-wrap items-center justify-center gap-3 text-sm">
+                <button id="audioInitBtn" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded-lg transition">
+                    <i class="fa-solid fa-volume-high" id="audioIcon"></i>
+                    <span id="audioBtnText">Enable Audio</span>
+                </button>
+
+                <button id="playScaleBtn" class="flex items-center gap-2 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg shadow-lg shadow-emerald-900/30 transition">
+                    <i class="fa-solid fa-play" id="playIcon"></i>
+                    <span id="playBtnText">Play Scale</span>
+                </button>
+
+                <button id="stopScaleBtn" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition disabled:opacity-50" disabled>
+                    <i class="fa-solid fa-square"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-grow flex flex-col gap-6">
+
+        <!-- Controls Dashboard -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Key & Mode Selector Card -->
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between gap-3">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-key text-emerald-400"></i> Key & Scale Mode
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-xs text-slate-400 mb-1 block">Root Key</span>
+                        <select id="keySelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="A" selected>A (Default)</option>
+                            <option value="A#">A# / Bb</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="C#">C# / Db</option>
+                            <option value="D">D</option>
+                            <option value="D#">D# / Eb</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="F#">F# / Gb</option>
+                            <option value="G">G</option>
+                            <option value="G#">G# / Ab</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 mb-1 block">Tonal Focus</span>
+                        <select id="scaleSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="minor">Minor Pentatonic</option>
+                            <option value="major">Major Pentatonic Sound</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-1 border-t border-slate-800">
+                    <label class="text-xs text-slate-300 flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="blueNoteToggle" class="rounded bg-slate-900 border-slate-700 text-purple-600 focus:ring-purple-500 w-4 h-4">
+                        <span>Include Blue Note (b5)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- GuitarJamz Pentatonic Box Selector Card -->
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between gap-3">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-emerald-400"></i> GuitarJamz Box Shape
+                </label>
+                <div>
+                    <span class="text-xs text-slate-400 mb-1 block">Select Pattern</span>
+                    <select id="boxSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none font-medium">
+                        <option value="all">Entire 24-Fret Neck (All Boxes)</option>
+                        <option value="box1">Box 1 (A Min: Frets 2-5)</option>
+                        <option value="box2">Box 2 (A Min: Frets 5-8 "Basic Box")</option>
+                        <option value="box3">Box 3 (A Min: Frets 7-10)</option>
+                        <option value="box4">Box 4 (A Min: Frets 9-13)</option>
+                        <option value="box5">Box 5 (A Min: Frets 12-15)</option>
+                    </select>
+                </div>
+                <div class="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800">
+                    <span id="boxFretSpanDisplay">Active Range: Frets 0 - 24</span>
+                </div>
+            </div>
+
+            <!-- Tuning Setup Card -->
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between gap-3">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-emerald-400"></i> Tuning
+                </label>
+                <div>
+                    <span class="text-xs text-slate-400 mb-1 block">Preset Tuning</span>
+                    <select id="tuningSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <option value="standard">Standard (E A D G B E)</option>
+                        <option value="dropD">Drop D (D A D G B E)</option>
+                        <option value="halfStep">Half Step Down (Eb Ab Db Gb Bb Eb)</option>
+                        <option value="fullStep">Full Step Down (D G C F A D)</option>
+                        <option value="openG">Open G (D G D G B D)</option>
+                    </select>
+                </div>
+                <div class="text-xs text-slate-400 border-t border-slate-800 pt-1">
+                    Standard Tuning matched to diagram
+                </div>
+            </div>
+
+            <!-- Display Options & BPM Card -->
+            <div class="bg-cardBg p-4 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between gap-3">
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-eye text-emerald-400"></i> Labels & Tempo
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-xs text-slate-400 mb-1 block">Badge Text</span>
+                        <select id="labelModeSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="notes">Note Names (A, C...)</option>
+                            <option value="degrees">Scale Intervals (1, b3...)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 mb-1 block">Tempo (<span id="bpmValue">120</span> BPM)</span>
+                        <input type="range" id="bpmSlider" min="40" max="240" value="120" class="w-full accent-emerald-500 my-2 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Fretboard Visualization Section -->
+        <div class="bg-cardBg border border-slate-800 rounded-2xl p-4 md:p-6 shadow-2xl relative">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-slate-300">24-Fret Interactive Fretboard</span>
+                    <span id="boxTitleTag" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-medium">All Frets</span>
+                </div>
+                <div class="text-xs text-slate-400 hidden sm:block">
+                    <i class="fa-solid fa-arrows-left-right mr-1"></i> Scroll horizontally to view full neck (24 Frets)
+                </div>
+            </div>
+
+            <!-- Scrollable Fretboard Container -->
+            <div class="fretboard-scroll overflow-x-auto pb-4 pt-2">
+                <div id="fretboard" class="fretboard-wood relative rounded-lg min-w-[1300px] border-y-4 border-amber-950/80 my-2 select-none">
+                    <!-- Fret lines, strings, markers, highlight overlay, and note badges rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Legend Bar -->
+            <div class="mt-4 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded-full bg-emerald-600 border border-emerald-300 inline-block shadow"></span>
+                        <span class="text-slate-300 font-medium">Root Note (<span id="rootNoteLegendName">A</span>)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded-full bg-slate-700 border border-slate-400 inline-block shadow"></span>
+                        <span class="text-slate-300">Scale Notes (C, D, E, G)</span>
+                    </div>
+                    <div id="blueNoteLegendItem" class="flex items-center gap-2 opacity-50">
+                        <span class="w-4 h-4 rounded-full bg-purple-600 border border-purple-300 inline-block shadow"></span>
+                        <span class="text-slate-300">Blue Note (b5)</span>
+                    </div>
+                </div>
+
+                <div class="text-slate-400">
+                    <span class="font-semibold text-slate-300">Fret Markers:</span> Single (3, 5, 7, 9, 15, 17, 19, 21) | Double (12, 24)
+                </div>
+            </div>
+        </div>
+
+        <!-- GuitarJamz Information Card Panel -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Box Details & Position Start Card -->
+            <div class="bg-cardBg p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 id="infoBoxTitle" class="text-base font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-box text-emerald-400"></i> Box 2 - Basic Box
+                        </h3>
+                        <span id="infoFretSpan" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700 font-mono">Frets 5-8</span>
+                    </div>
+                    <div id="infoStartDesc" class="p-3 bg-slate-900/80 rounded-lg border border-slate-800 text-sm text-slate-200 mb-3 space-y-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <div class="text-xs text-slate-400 border-t border-slate-800/80 pt-2">
+                    <strong class="text-slate-300">Shapes Link Up:</strong> 1 &rarr; 2 &rarr; 3 &rarr; 4 &rarr; 5 along the neck.
+                </div>
+            </div>
+
+            <!-- Notes & String Patterns Card -->
+            <div class="bg-cardBg p-5 rounded-xl border border-slate-800 shadow-md">
+                <h3 class="text-base font-bold text-slate-100 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-music text-emerald-400"></i> Active Scale Notes
+                </h3>
+                <div id="scaleNotesBreakdown" class="flex flex-wrap gap-2 mb-3">
+                    <!-- Dynamic badges for notes -->
+                </div>
+                <p id="scaleFormulaText" class="text-xs text-slate-400 leading-relaxed">
+                    Minor Pentatonic formula: 1 - b3 - 4 - 5 - b7. In key of A: A, C, D, E, G.
+                </p>
+            </div>
+
+            <!-- GuitarJamz Theory & Relative Major Tips -->
+            <div class="bg-cardBg p-5 rounded-xl border border-slate-800 shadow-md">
+                <h3 class="text-base font-bold text-slate-100 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-amber-400"></i> GuitarJamz Sweet Sound Tip
+                </h3>
+                <div id="sweetSoundBox" class="text-sm text-slate-300 mb-3">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="text-xs text-slate-400 space-y-1.5 border-t border-slate-800 pt-3">
+                    <p><strong class="text-slate-300">Transposition:</strong> Slide every box shape up/down so the root note lands on your chosen key.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 text-center text-xs text-slate-500 mt-6">
+        <p>Interactive 24-Fret Pentatonic Scale Visualizer &bull; Styled & Structured to GuitarJamz 5-Box Specifications</p>
+    </footer>
+
+    <!-- Web Audio & GuitarJamz Application Logic -->
+    <script>
+        // Note Chromatic Scale Constants
+        const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+        // Preset Tunings (String 6 down to String 1)
+        const TUNINGS = {
+            standard: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+            dropD: ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+            halfStep: ['D#2', 'G#2', 'C#3', 'F#3', 'A#3', 'D#4'],
+            fullStep: ['D2', 'G2', 'C3', 'F3', 'A3', 'D4'],
+            openG: ['D2', 'G2', 'D3', 'G3', 'B3', 'D4']
+        };
+
+        // Pentatonic Scale Semitone Offsets & Interval Names
+        const PENTATONIC_MINOR = {
+            semitones: [0, 3, 5, 7, 10], // 1, b3, 4, 5, b7
+            intervals: ['1', 'b3', '4', '5', 'b7']
+        };
+
+        const PENTATONIC_MAJOR = {
+            semitones: [0, 2, 4, 7, 9],  // 1, 2, 3, 5, 6
+            intervals: ['1', '2', '3', '5', '6']
+        };
+
+        /**
+         * GuitarJamz 5 Pentatonic Box Specifications
+         * Defined relative to Low E string root fret offset (A Minor root on Low E = Fret 5).
+         * offsets from root:
+         *   Box 1: Fret -3 to Fret 0 relative to root fret (Frets 2-5 in A)
+         *   Box 2: Fret 0 to Fret 3 relative to root fret (Frets 5-8 in A)
+         *   Box 3: Fret 2 to Fret 5 relative to root fret (Frets 7-10 in A)
+         *   Box 4: Fret 4 to Fret 8 relative to root fret (Frets 9-13 in A)
+         *   Box 5: Fret 7 to Fret 10 relative to root fret (Frets 12-15 in A)
+         */
+        const GUITARJAMZ_BOXES = {
+            box1: {
+                id: 'box1',
+                name: 'Box 1',
+                fretOffsetStart: -3,
+                fretOffsetEnd: 0,
+                startDesc: "Start: 4th finger on Low E string (Root Note)",
+                fingerRec: "4th finger",
+                stringRec: "Low E",
+                noteOffsetFromRoot: 0
+            },
+            box2: {
+                id: 'box2',
+                name: 'Box 2 ("Basic Box")',
+                fretOffsetStart: 0,
+                fretOffsetEnd: 3,
+                startDesc: "Start: 1st finger on Low E string (Root Note)",
+                fingerRec: "1st finger",
+                stringRec: "Low E",
+                noteOffsetFromRoot: 0
+            },
+            box3: {
+                id: 'box3',
+                name: 'Box 3',
+                fretOffsetStart: 2,
+                fretOffsetEnd: 5,
+                startDesc: "Start: 2nd finger on Low E string (b3 Note)",
+                fingerRec: "2nd finger",
+                stringRec: "Low E",
+                noteOffsetFromRoot: 3 // b3 note
+            },
+            box4: {
+                id: 'box4',
+                name: 'Box 4',
+                fretOffsetStart: 4,
+                fretOffsetEnd: 8,
+                startDesc: "Start: 1st finger on Low E string (4th Note)",
+                fingerRec: "1st finger",
+                stringRec: "Low E",
+                noteOffsetFromRoot: 5 // 4th note
+            },
+            box5: {
+                id: 'box5',
+                name: 'Box 5',
+                fretOffsetStart: 7,
+                fretOffsetEnd: 10,
+                startDesc: "Start: 1st finger on Low E string (5th Note)",
+                fingerRec: "1st finger",
+                stringRec: "Low E",
+                noteOffsetFromRoot: 7 // 5th note
+            }
+        };
+
+        // Global State
+        let state = {
+            key: 'A',
+            scaleType: 'minor', // 'minor' or 'major'
+            includeBlueNote: false,
+            boxPattern: 'all',  // 'all', 'box1', 'box2', 'box3', 'box4', 'box5'
+            tuningName: 'standard',
+            strings: [...TUNINGS.standard],
+            labelMode: 'notes', // 'notes' or 'degrees'
+            bpm: 120,
+            isPlaying: false
+        };
+
+        // Audio Context Engine
+        let audioCtx = null;
+        let playbackTimer = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            document.getElementById('audioBtnText').textContent = 'Audio Ready';
+            document.getElementById('audioInitBtn').classList.add('bg-emerald-950', 'text-emerald-400', 'border-emerald-800');
+        }
+
+        // Synthesize plucked guitar string audio
+        function playPitch(frequency, duration = 1.2) {
+            if (!audioCtx) initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+
+            osc.type = 'triangle';
+            osc2.type = 'sawtooth';
+
+            osc.frequency.setValueAtTime(frequency, now);
+            osc2.frequency.setValueAtTime(frequency * 2, now);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(frequency * 4, now);
+            filter.frequency.exponentialRampToValueAtTime(frequency * 0.8, now + duration);
+
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.55, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+            osc.connect(filter);
+            osc2.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc2.start(now);
+            osc.stop(now + duration);
+            osc2.stop(now + duration);
+        }
+
+        function noteToFreq(noteWithOctave) {
+            const match = noteWithOctave.match(/([A-G]#?)(-?\d+)/);
+            if (!match) return 440;
+            const name = match[1];
+            const octave = parseInt(match[2]);
+            const noteIndex = NOTES.indexOf(name);
+            const midiNote = (octave + 1) * 12 + noteIndex;
+            return 440 * Math.pow(2, (midiNote - 69) / 12);
+        }
+
+        function getNoteByOffset(root, semitones) {
+            const rootIndex = NOTES.indexOf(root);
+            return NOTES[(rootIndex + semitones) % 12];
+        }
+
+        function getFretNoteAndOctave(openNoteWithOctave, fret) {
+            const match = openNoteWithOctave.match(/([A-G]#?)(\d+)/);
+            const openNote = match[1];
+            let octave = parseInt(match[2]);
+            let noteIdx = NOTES.indexOf(openNote);
+
+            let totalIdx = noteIdx + fret;
+            octave += Math.floor(totalIdx / 12);
+            let finalNote = NOTES[totalIdx % 12];
+
+            return { note: finalNote, octave: octave, fullStr: `${finalNote}${octave}` };
+        }
+
+        // Calculate Root Fret on Low E string (6th string)
+        function getLowERootFret(key) {
+            const lowENote = state.strings[0].replace(/\d+/, '');
+            const lowEIdx = NOTES.indexOf(lowENote);
+            const keyIdx = NOTES.indexOf(key);
+            let fret = (keyIdx - lowEIdx + 12) % 12;
+            if (fret < 2) fret += 12; // Keep primary box 1 above fret 1 for comfortable layout
+            return fret;
+        }
+
+        // Calculate dynamic fret ranges for each box depending on Key
+        function getBoxFretRange(boxKey, rootKey) {
+            const rootFret = getLowERootFret(rootKey);
+            const boxConfig = GUITARJAMZ_BOXES[boxKey];
+            let start = rootFret + boxConfig.fretOffsetStart;
+            let end = rootFret + boxConfig.fretOffsetEnd;
+
+            // Handle lower boundary
+            if (start < 0) {
+                start += 12;
+                end += 12;
+            }
+
+            return { start, end };
+        }
+
+        // Get active scale notes & interval degree strings
+        function getScaleInfo() {
+            const root = state.key;
+            const formulaObj = state.scaleType === 'minor' ? PENTATONIC_MINOR : PENTATONIC_MAJOR;
+            let scaleNotes = [];
+            let degrees = [];
+
+            formulaObj.semitones.forEach((st, idx) => {
+                scaleNotes.push(getNoteByOffset(root, st));
+                degrees.push(formulaObj.intervals[idx]);
+            });
+
+            if (state.includeBlueNote) {
+                const blueSemitone = state.scaleType === 'minor' ? 6 : 3;
+                const blueDegree = state.scaleType === 'minor' ? 'b5' : 'b3';
+                scaleNotes.push(getNoteByOffset(root, blueSemitone));
+                degrees.push(blueDegree);
+            }
+
+            return { root, scaleNotes, degrees };
+        }
+
+        // Filter frets by box selection
+        function isFretInActiveBox(fret) {
+            if (state.boxPattern === 'all') return true;
+
+            const { start, end } = getBoxFretRange(state.boxPattern, state.key);
+            
+            // Allow octaves across 24 frets (e.g. frets 5-8 & 17-20)
+            for (let b = -12; b <= 24; b += 12) {
+                let s = start + b;
+                let e = end + b;
+                if (fret >= s && fret <= e) return true;
+            }
+            return false;
+        }
+
+        // Render Interactive Fretboard
+        function renderFretboard() {
+            const fretboard = document.getElementById('fretboard');
+            fretboard.innerHTML = '';
+
+            const numFrets = 24;
+            const strings = [...state.strings].reverse(); // Render string 1 (High E) top to string 6 (Low E) bottom
+            const { root, scaleNotes, degrees } = getScaleInfo();
+
+            const boardHeight = strings.length * 42 + 30;
+            fretboard.style.height = `${boardHeight}px`;
+
+            // Fret numbers header line
+            const numbersRow = document.createElement('div');
+            numbersRow.className = 'absolute top-0 left-0 w-full h-6 flex text-[11px] font-semibold text-slate-400 border-b border-slate-800/80 pointer-events-none';
+            
+            for (let f = 0; f <= numFrets; f++) {
+                const fretWidthPercent = (1 / (numFrets + 1)) * 100;
+                
+                const numCell = document.createElement('div');
+                numCell.style.width = `${fretWidthPercent}%`;
+                numCell.className = 'flex justify-center items-center font-mono';
+                numCell.textContent = f === 0 ? 'Nut' : f;
+                numbersRow.appendChild(numCell);
+
+                // Fret Wires
+                if (f > 0) {
+                    const fretWire = document.createElement('div');
+                    fretWire.className = (f === 12 || f === 24) ? 'absolute top-6 bottom-0 w-[3px] bg-amber-200/70 z-10 shadow' : 'absolute top-6 bottom-0 w-[2px] bg-slate-500/50 z-10';
+                    fretWire.style.left = `${(f / (numFrets + 1)) * 100}%`;
+                    fretboard.appendChild(fretWire);
+                }
+
+                // Inlay Dots
+                if ([3, 5, 7, 9, 15, 17, 19, 21].includes(f)) {
+                    const dot = document.createElement('div');
+                    dot.className = 'absolute w-3 h-3 rounded-full bg-slate-400/25 z-0 transform -translate-x-1/2 -translate-y-1/2';
+                    dot.style.left = `${((f - 0.5) / (numFrets + 1)) * 100}%`;
+                    dot.style.top = '55%';
+                    fretboard.appendChild(dot);
+                } else if (f === 12 || f === 24) {
+                    const dot1 = document.createElement('div');
+                    dot1.className = 'absolute w-3 h-3 rounded-full bg-slate-400/25 z-0 transform -translate-x-1/2 -translate-y-1/2';
+                    dot1.style.left = `${((f - 0.5) / (numFrets + 1)) * 100}%`;
+                    dot1.style.top = '35%';
+
+                    const dot2 = document.createElement('div');
+                    dot2.className = 'absolute w-3 h-3 rounded-full bg-slate-400/25 z-0 transform -translate-x-1/2 -translate-y-1/2';
+                    dot2.style.left = `${((f - 0.5) / (numFrets + 1)) * 100}%`;
+                    dot2.style.top = '75%';
+
+                    fretboard.appendChild(dot1);
+                    fretboard.appendChild(dot2);
+                }
+            }
+            fretboard.appendChild(numbersRow);
+
+            // Fretboard Nut
+            const nutLine = document.createElement('div');
+            nutLine.className = 'absolute top-6 bottom-0 w-2.5 bg-amber-100/70 z-20 shadow-md';
+            nutLine.style.left = `${(1 / (numFrets + 1)) * 100}%`;
+            fretboard.appendChild(nutLine);
+
+            // Render Box Highlight Overlay if single box selected
+            if (state.boxPattern !== 'all') {
+                const { start, end } = getBoxFretRange(state.boxPattern, state.key);
+                
+                // Primary Box Overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'absolute top-6 bottom-0 box-highlight-overlay z-0';
+                const leftPercent = ((start - 0.9) / (numFrets + 1)) * 100;
+                const rightPercent = ((end + 0.1) / (numFrets + 1)) * 100;
+                overlay.style.left = `${leftPercent}%`;
+                overlay.style.width = `${rightPercent - leftPercent}%`;
+                fretboard.appendChild(overlay);
+
+                // Octave Box Overlay (if within 24 frets)
+                if (start + 12 <= 24) {
+                    const octOverlay = document.createElement('div');
+                    octOverlay.className = 'absolute top-6 bottom-0 box-highlight-overlay z-0';
+                    const octLeft = (((start + 12) - 0.9) / (numFrets + 1)) * 100;
+                    const octRight = (Math.min(end + 12, 24) + 0.1) / (numFrets + 1) * 100;
+                    octOverlay.style.left = `${octLeft}%`;
+                    octOverlay.style.width = `${octRight - octLeft}%`;
+                    fretboard.appendChild(octOverlay);
+                }
+            }
+
+            // Guitar Strings and Note Badges
+            strings.forEach((openNoteWithOctave, stringIndex) => {
+                const stringTopPercent = 24 + (stringIndex * (70 / (strings.length - 1)));
+                
+                const stringLine = document.createElement('div');
+                const thickness = 1 + (stringIndex * 0.45);
+                stringLine.className = 'absolute left-0 right-0 bg-gradient-to-r from-slate-400 via-amber-100/70 to-slate-400 z-10 pointer-events-none shadow-sm';
+                stringLine.style.height = `${thickness}px`;
+                stringLine.style.top = `${stringTopPercent}%`;
+                fretboard.appendChild(stringLine);
+
+                for (let fret = 0; fret <= numFrets; fret++) {
+                    const noteInfo = getFretNoteAndOctave(openNoteWithOctave, fret);
+                    const noteName = noteInfo.note;
+                    const pitchFreq = noteToFreq(noteInfo.fullStr);
+
+                    const isRoot = noteName === root;
+                    const isScaleNote = scaleNotes.includes(noteName);
+                    const inBoxPattern = isFretInActiveBox(fret);
+
+                    let degreeLabel = '';
+                    let isBlueNote = false;
+
+                    if (isScaleNote) {
+                        const formulaObj = state.scaleType === 'minor' ? PENTATONIC_MINOR : PENTATONIC_MAJOR;
+                        const noteOffset = (NOTES.indexOf(noteName) - NOTES.indexOf(root) + 12) % 12;
+                        const blueOffset = state.scaleType === 'minor' ? 6 : 3;
+
+                        if (noteOffset === blueOffset && state.includeBlueNote) {
+                            isBlueNote = true;
+                            degreeLabel = state.scaleType === 'minor' ? 'b5' : 'b3';
+                        } else {
+                            const idx = formulaObj.semitones.indexOf(noteOffset);
+                            if (idx !== -1) {
+                                degreeLabel = formulaObj.intervals[idx];
+                            }
+                        }
+                    }
+
+                    if (isScaleNote && inBoxPattern) {
+                        const noteBadge = document.createElement('button');
+                        noteBadge.dataset.fret = fret;
+                        noteBadge.dataset.string = stringIndex;
+                        noteBadge.dataset.freq = pitchFreq;
+                        noteBadge.dataset.note = noteName;
+
+                        const leftPercent = fret === 0 ? ((0.5) / (numFrets + 1)) * 100 : ((fret - 0.5) / (numFrets + 1)) * 100;
+                        noteBadge.style.left = `${leftPercent}%`;
+                        noteBadge.style.top = `${stringTopPercent}%`;
+
+                        let colorClasses = 'bg-slate-700 text-slate-100 border-slate-500';
+                        if (isRoot) {
+                            // Filled green dot matching GuitarJamz root node badge style
+                            colorClasses = 'bg-emerald-600 text-white font-bold border-emerald-300 ring-2 ring-emerald-500/50 shadow-emerald-900/50';
+                        } else if (isBlueNote) {
+                            colorClasses = 'bg-purple-600 text-white border-purple-300';
+                        }
+
+                        noteBadge.className = `absolute transform -translate-x-1/2 -translate-y-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full border-2 text-xs flex items-center justify-center font-bold shadow-lg transition-transform hover:scale-125 z-30 ${colorClasses}`;
+
+                        const displayText = state.labelMode === 'notes' ? noteName : degreeLabel;
+                        noteBadge.textContent = displayText;
+
+                        noteBadge.addEventListener('click', () => {
+                            initAudio();
+                            playPitch(pitchFreq);
+                            noteBadge.classList.add('scale-125', 'brightness-125');
+                            setTimeout(() => noteBadge.classList.remove('scale-125', 'brightness-125'), 300);
+                        });
+
+                        fretboard.appendChild(noteBadge);
+                    }
+                }
+            });
+        }
+
+        // Update GuitarJamz Info Dashboard
+        function updateDashboardInfo() {
+            const { root, scaleNotes, degrees } = getScaleInfo();
+            const rootFretLowE = getLowERootFret(root);
+
+            document.getElementById('rootNoteLegendName').textContent = root;
+
+            // Update Box Selector dropdown text with transposed fret ranges
+            const boxSelect = document.getElementById('boxSelect');
+            Object.keys(GUITARJAMZ_BOXES).forEach(bKey => {
+                const { start, end } = getBoxFretRange(bKey, root);
+                const option = boxSelect.querySelector(`option[value="${bKey}"]`);
+                if (option) {
+                    const bConfig = GUITARJAMZ_BOXES[bKey];
+                    option.textContent = `${bConfig.name} (${root} Min: Frets ${start}-${end})`;
+                }
+            });
+
+            // Update Info Card for Active Box
+            const infoBoxTitle = document.getElementById('infoBoxTitle');
+            const infoFretSpan = document.getElementById('infoFretSpan');
+            const infoStartDesc = document.getElementById('infoStartDesc');
+            const boxTitleTag = document.getElementById('boxTitleTag');
+
+            if (state.boxPattern === 'all') {
+                infoBoxTitle.innerHTML = `<i class="fa-solid fa-layer-group text-emerald-400"></i> All 5 Pentatonic Boxes`;
+                infoFretSpan.textContent = 'Frets 0-24';
+                boxTitleTag.textContent = 'All 24 Frets';
+                infoStartDesc.innerHTML = `
+                    <p><strong>Overview:</strong> All 5 boxes connected continuously across the entire neck.</p>
+                    <p class="text-xs text-slate-400">Position 1 &rarr; Position 2 &rarr; Position 3 &rarr; Position 4 &rarr; Position 5</p>
+                `;
+            } else {
+                const bConfig = GUITARJAMZ_BOXES[state.boxPattern];
+                const { start, end } = getBoxFretRange(state.boxPattern, root);
+                
+                infoBoxTitle.innerHTML = `<i class="fa-solid fa-box text-emerald-400"></i> ${bConfig.name}`;
+                infoFretSpan.textContent = `Frets ${start}-${end}`;
+                boxTitleTag.textContent = `${bConfig.name}: Frets ${start}-${end}`;
+
+                // Calculate starting note on Low E for this box
+                const startNoteLowE = getFretNoteAndOctave(state.strings[0], start).note;
+
+                infoStartDesc.innerHTML = `
+                    <p><strong class="text-emerald-400">Start Position:</strong> ${bConfig.fingerRec}, ${start}th fret on Low E string (${startNoteLowE}).</p>
+                    <p><strong class="text-slate-200">Fret Range:</strong> Frets ${start} to ${end}.</p>
+                    <p class="text-xs text-slate-400 mt-1">${bConfig.startDesc}</p>
+                `;
+            }
+
+            // Notes Breakdown Badges
+            const scaleNotesBreakdown = document.getElementById('scaleNotesBreakdown');
+            scaleNotesBreakdown.innerHTML = '';
+            scaleNotes.forEach((n, idx) => {
+                const isR = n === root;
+                const badge = document.createElement('div');
+                badge.className = `px-3 py-1.5 rounded-lg border text-xs font-bold flex flex-col items-center ${isR ? 'bg-emerald-950/90 border-emerald-600 text-emerald-200 shadow-md' : 'bg-slate-800 border-slate-700 text-slate-200'}`;
+                badge.innerHTML = `<span>${n}</span><span class="text-[10px] font-normal text-slate-400">${degrees[idx]}</span>`;
+                scaleNotesBreakdown.appendChild(badge);
+            });
+
+            // GuitarJamz Sweet Major Sound Tip Card
+            const sweetSoundBox = document.getElementById('sweetSoundBox');
+            const relMaj = getNoteByOffset(root, 3);
+            const relMin = getNoteByOffset(root, 9);
+
+            if (state.scaleType === 'minor') {
+                sweetSoundBox.innerHTML = `
+                    <p class="font-semibold text-emerald-400 mb-1">Sweet Major Sound</p>
+                    <p class="text-xs text-slate-300">The exact same box shapes form the <strong>${relMaj} Major Pentatonic</strong> scale!</p>
+                    <p class="text-xs text-slate-400 mt-1">To get a warm major sound, play these box shapes but aim for and emphasize the <strong>${relMaj}</strong> notes.</p>
+                `;
+            } else {
+                sweetSoundBox.innerHTML = `
+                    <p class="font-semibold text-emerald-400 mb-1">Relative Minor Sound</p>
+                    <p class="text-xs text-slate-300">These box shapes share the exact same pattern as <strong>${relMin} Minor Pentatonic</strong>.</p>
+                    <p class="text-xs text-slate-400 mt-1">Emphasize the <strong>${root}</strong> notes for a bright major sound.</p>
+                `;
+            }
+
+            // Legend item visibility
+            const blueItem = document.getElementById('blueNoteLegendItem');
+            if (state.includeBlueNote) {
+                blueItem.classList.remove('opacity-50');
+            } else {
+                blueItem.classList.add('opacity-50');
+            }
+
+            const fretDisplay = document.getElementById('boxFretSpanDisplay');
+            if (state.boxPattern === 'all') {
+                fretDisplay.textContent = 'Active Range: Frets 0 - 24';
+            } else {
+                const { start, end } = getBoxFretRange(state.boxPattern, root);
+                fretDisplay.textContent = `Active Range: Frets ${start} - ${end}`;
+            }
+        }
+
+        // Automatic Scale Audio Player
+        function startScalePlayback() {
+            initAudio();
+            if (state.isPlaying) stopScalePlayback();
+
+            state.isPlaying = true;
+            document.getElementById('playBtnText').textContent = 'Playing...';
+            document.getElementById('playIcon').className = 'fa-solid fa-spinner fa-spin';
+            document.getElementById('stopScaleBtn').disabled = false;
+
+            const badges = Array.from(document.querySelectorAll('#fretboard button'));
+            if (badges.length === 0) return;
+
+            badges.sort((a, b) => parseFloat(a.dataset.freq) - parseFloat(b.dataset.freq));
+
+            const uniquePitchBadges = [];
+            const seenFreqs = new Set();
+            badges.forEach(b => {
+                const freq = Math.round(parseFloat(b.dataset.freq));
+                if (!seenFreqs.has(freq)) {
+                    seenFreqs.add(freq);
+                    uniquePitchBadges.push(b);
+                }
+            });
+
+            const sequence = [...uniquePitchBadges, ...[...uniquePitchBadges].reverse().slice(1)];
+            let currentStep = 0;
+            const intervalMs = (60 / state.bpm) * 1000;
+
+            playbackTimer = setInterval(() => {
+                if (currentStep >= sequence.length) {
+                    stopScalePlayback();
+                    return;
+                }
+
+                document.querySelectorAll('.playing-note').forEach(el => el.classList.remove('playing-note'));
+
+                const targetBadge = sequence[currentStep];
+                if (targetBadge) {
+                    targetBadge.classList.add('playing-note');
+                    playPitch(parseFloat(targetBadge.dataset.freq), 0.8);
+                }
+
+                currentStep++;
+            }, intervalMs);
+        }
+
+        function stopScalePlayback() {
+            if (playbackTimer) clearInterval(playbackTimer);
+            state.isPlaying = false;
+            document.getElementById('playBtnText').textContent = 'Play Scale';
+            document.getElementById('playIcon').className = 'fa-solid fa-play';
+            document.getElementById('stopScaleBtn').disabled = true;
+            document.querySelectorAll('.playing-note').forEach(el => el.classList.remove('playing-note'));
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            document.getElementById('audioInitBtn').addEventListener('click', initAudio);
+
+            document.getElementById('keySelect').addEventListener('change', (e) => {
+                state.key = e.target.value;
+                renderFretboard();
+                updateDashboardInfo();
+            });
+
+            document.getElementById('scaleSelect').addEventListener('change', (e) => {
+                state.scaleType = e.target.value;
+                renderFretboard();
+                updateDashboardInfo();
+            });
+
+            document.getElementById('blueNoteToggle').addEventListener('change', (e) => {
+                state.includeBlueNote = e.target.checked;
+                renderFretboard();
+                updateDashboardInfo();
+            });
+
+            document.getElementById('boxSelect').addEventListener('change', (e) => {
+                state.boxPattern = e.target.value;
+                renderFretboard();
+                updateDashboardInfo();
+            });
+
+            document.getElementById('tuningSelect').addEventListener('change', (e) => {
+                state.tuningName = e.target.value;
+                state.strings = [...TUNINGS[state.tuningName]];
+                renderFretboard();
+                updateDashboardInfo();
+            });
+
+            document.getElementById('labelModeSelect').addEventListener('change', (e) => {
+                state.labelMode = e.target.value;
+                renderFretboard();
+            });
+
+            const bpmSlider = document.getElementById('bpmSlider');
+            bpmSlider.addEventListener('input', (e) => {
+                state.bpm = parseInt(e.target.value);
+                document.getElementById('bpmValue').textContent = state.bpm;
+                if (state.isPlaying) startScalePlayback();
+            });
+
+            document.getElementById('playScaleBtn').addEventListener('click', () => {
+                if (state.isPlaying) stopScalePlayback();
+                else startScalePlayback();
+            });
+
+            document.getElementById('stopScaleBtn').addEventListener('click', stopScalePlayback);
+        }
+
+        window.onload = function() {
+            setupEventListeners();
+            renderFretboard();
+            updateDashboardInfo();
+        };
+    </script>
+</body>
+</html>
